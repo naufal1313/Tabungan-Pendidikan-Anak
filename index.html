@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kalkulator Tabungan Pendidikan Anak</title>
+  <style>
+    :root {
+      --bg: #f5f9ff;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --line: #e2e8f0;
+      --primary: #3b82f6;
+      --primary-600: #2563eb;
+      --ring: rgba(59, 130, 246, .25);
+      --err: #dc2626;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); }
+
+    body { padding: 16px; }
+
+    .header {
+      max-width: 960px; margin: 0 auto 16px; border-radius: 16px;
+      background: linear-gradient(135deg, #93c5fd, #3b82f6);
+      color: white; box-shadow: 0 6px 20px rgba(59,130,246,.25);
+    }
+    .header .inner { padding: 18px 16px; }
+    .header h1 { margin: 0; font-size: clamp(22px, 4.5vw, 28px); }
+
+    .app { max-width: 960px; margin: 0 auto; display: grid; gap: 14px; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 10px 20px rgba(15,23,42,.06);
+    }
+
+    form { display: grid; gap: 14px; }
+    .row { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 720px) { .row { grid-template-columns: 1fr 1fr; } }
+
+    label { font-size: 13px; color: var(--muted); }
+    .field { display: grid; gap: 6px; }
+
+    input[type="number"], select {
+      width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--line);
+      background: #fbfdff; color: var(--text); font-size: 16px;
+      outline: none; transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    input[type="number"]:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 6px var(--ring);
+    }
+
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    button {
+      border: 0; padding: 12px 16px; border-radius: 12px; cursor: pointer; font-weight: 600;
+      background: linear-gradient(180deg, var(--primary), var(--primary-600)); color: #fff; box-shadow: 0 6px 20px rgba(59,130,246,.25);
+      font-size: 15px;
+    }
+    button.secondary {
+      background: #fff; color: var(--primary-600); border: 1px solid var(--line);
+    }
+
+    .results { display: grid; gap: 12px; margin-top: 6px; }
+    .grid-3 { display: grid; gap: 10px; grid-template-columns: 1fr; }
+    @media (min-width: 720px) { .grid-3 { grid-template-columns: repeat(3, 1fr); } }
+
+    .kpi {
+      background: #f8fbff; border: 1px solid var(--line); border-radius: 14px; padding: 14px;
+    }
+    .kpi .label { color: var(--muted); font-size: 12.5px; }
+    .kpi .value { font-size: clamp(18px, 3.2vw, 24px); font-weight: 800; margin-top: 6px; color: #0b1951; }
+    .kpi .sub { color: var(--muted); font-size: 12px; margin-top: 6px; }
+
+    .note { color: var(--muted); font-size: 13px; }
+    .err { color: var(--err); }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="inner">
+      <h1>🧮 Kalkulator Tabungan Pendidikan Anak</h1>
+    </div>
+  </header>
+
+  <main class="app">
+    <section class="card">
+      <form id="form">
+        <div class="row">
+          <div class="field">
+            <label for="totalDana">Total dana yang dibutuhkan (Rp)</label>
+            <input id="totalDana" name="totalDana" type="number" inputmode="decimal" min="0" step="1" required />
+          </div>
+          <div class="field">
+            <label for="lamaMenabung">Lama menabung</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input id="lamaMenabung" name="lamaMenabung" type="number" inputmode="decimal" min="0" step="1" style="flex:1;" required />
+              <select id="satuanWaktu" name="satuanWaktu" style="flex:0 0 120px;">
+                <option value="tahun" selected>Tahun</option>
+                <option value="bulan">Bulan</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label for="bunga">Bunga</label>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input id="bunga" name="bunga" type="number" inputmode="decimal" min="0" step="0.01" style="flex:1;" required />
+              <select id="bungaSatuan" name="bungaSatuan" style="flex:0 0 140px;">
+                <option value="per_tahun" selected>per Tahun (%)</option>
+                <option value="per_bulan">per Bulan (%)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit">Hitung</button>
+          <button type="reset" class="secondary">Reset</button>
+          <span class="note" id="msg"></span>
+        </div>
+      </form>
+
+      <div class="results" id="results" hidden>
+        <div class="grid-3">
+          <div class="kpi">
+            <div class="label">Lama Menabung</div>
+            <div class="value" id="lamaText">—</div>
+            <div class="sub" id="bulanText">—</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Tabungan Bulanan Wajib</div>
+            <div class="value" id="bulananText">—</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Total Setoran Selama Menabung</div>
+            <div class="value" id="totalSetoranText">—</div>
+            <div class="sub" id="selisihText">—</div>
+          </div>
+        </div>
+        <p class="note" id="catatan"></p>
+      </div>
+    </section>
+
+    <section class="card" style="padding-top:8px">
+      <details open>
+        <summary><strong>Rumus yang digunakan</strong></summary>
+        <p class="note">
+          <strong>Tanpa bunga:</strong> <code>P = FV / n</code><br>
+          <strong>Bunga majemuk bulanan (bunga per tahun):</strong> <code>P = FV · (r/12) / ((1 + r/12)^n − 1)</code><br>
+          <strong>Bunga majemuk bulanan (bunga per bulan):</strong> <code>P = FV · r / ((1 + r)^n − 1)</code><br>
+          Keterangan: <em>r</em> = bunga per bulan, <em>n</em> = jumlah bulan, <em>FV</em> = total dana yang dibutuhkan.
+        </p>
+      </details>
+    </section>
+  </main>
+
+  <script>
+    const fmtIDR = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+    const fmtNum = new Intl.NumberFormat('id-ID');
+
+    const el = (id) => document.getElementById(id);
+
+    const form = el('form');
+    const results = el('results');
+    const msg = el('msg');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      msg.textContent = '';
+
+      const totalDana = Number(el('totalDana').value);
+      const lamaMenabung = Number(el('lamaMenabung').value);
+      const satuanWaktu = el('satuanWaktu').value;
+      const bungaInput = Number(el('bunga').value);
+      const bungaSatuan = el('bungaSatuan').value;
+
+      if (!isFinite(totalDana) || totalDana <= 0) return showError('Total dana harus lebih dari 0.');
+      if (!isFinite(lamaMenabung) || lamaMenabung <= 0) return showError('Lama menabung harus lebih dari 0.');
+      if (!isFinite(bungaInput) || bungaInput < 0) return showError('Bunga tidak boleh negatif.');
+
+      const bulan = satuanWaktu === 'tahun' ? Math.round(lamaMenabung * 12) : lamaMenabung;
+      const r = bungaInput === 0 ? 0 : (bungaSatuan === 'per_tahun' ? (bungaInput / 100) / 12 : (bungaInput / 100));
+
+      let tabunganBulanan;
+      if (r === 0) {
+        tabunganBulanan = totalDana / bulan;
+      } else if (bulan === 1) {
+        tabunganBulanan = totalDana / (1 + r);
+      } else {
+        const denom = Math.pow(1 + r, bulan) - 1;
+        if (denom <= 0) return showError('Perhitungan tidak valid.');
+        tabunganBulanan = totalDana * r / denom;
+      }
+
+      const totalSetoran = tabunganBulanan * bulan;
+      const selisih = totalSetoran - totalDana;
+
+      el('lamaText').textContent = satuanWaktu === 'tahun'
+        ? `${fmtNum.format(lamaMenabung)} tahun`
+        : `${fmtNum.format(lamaMenabung)} bulan`;
+      el('bulanText').textContent = satuanWaktu === 'tahun'
+        ? `≈ ${fmtNum.format(bulan)} bulan`
+        : '';
+      el('bulananText').textContent = fmtIDR.format(Math.round(tabunganBulanan));
+      el('totalSetoranText').textContent = fmtIDR.format(Math.round(totalSetoran));
+      el('selisihText').textContent = selisih >= 0
+        ? `Perkiraan bunga total: ${fmtIDR.format(Math.round(selisih))}`
+        : `Selisih terhadap target: ${fmtIDR.format(Math.round(selisih))}`;
+
+      const catatan = [];
+      catatan.push(r === 0 ? 'Perhitungan tanpa bunga.' : `Bunga majemuk bulanan (r) = ${(r * 100).toFixed(4)}% per bulan.`);
+      el('catatan').innerHTML = catatan.join(' ');
+
+      results.hidden = false;
+      results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    form.addEventListener('reset', () => {
+      results.hidden = true;
+      msg.textContent = '';
+    });
+
+    function showError(text) {
+      msg.textContent = text; msg.classList.add('err');
+      setTimeout(() => msg.classList.remove('err'), 3000);
+    }
+  </script>
+</body>
+</html>
